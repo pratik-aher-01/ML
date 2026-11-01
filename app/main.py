@@ -124,18 +124,18 @@ def render_notebook(practical_code: str) -> str:
 
 
 def code_for_practical(practical_code: str) -> str:
-    practical, _, notebook = load_notebook(practical_code)
-    sections = [f"# Practical {practical_code} — {practical[0]}", "# Loaded directly from ML Practical Cloud"]
-    code_number = 0
+    _, _, notebook = load_notebook(practical_code)
+    sections = []
     for cell in notebook.get("cells", []):
         if cell.get("cell_type") != "code":
             continue
         source = cell.get("source", "")
         if isinstance(source, list):
             source = "".join(source)
-        code_number += 1
-        sections.append(f"# --- Code cell {code_number} ---\n{source.rstrip()}")
-    return "\n\n".join(sections) + "\n"
+        source = source.strip()
+        if source:
+            sections.append(source)
+    return "\n\n".join(sections) + "\n" if sections else ""
 
 
 @app.get("/c/{practical_code}", response_class=PlainTextResponse)
