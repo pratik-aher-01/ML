@@ -4,12 +4,12 @@ from pathlib import Path
 
 import markdown
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 
 app = FastAPI(
     title="ML Practical Cloud",
     description="Browser-readable machine learning practicals",
-    version="2.0.0",
+    version="2.1.0",
 )
 NOTEBOOK_DIR = Path(__file__).resolve().parent.parent / "notebooks"
 
@@ -29,6 +29,20 @@ PRACTICALS = {
     13: ("Ensemble Learning", "10_ensemble_learning.ipynb"),
     14: ("Reinforcement Learning — Q-Learning", "11_q_learning_grid_world.ipynb"),
 }
+
+
+def load_notebook(practical_id: int):
+    practical = PRACTICALS.get(practical_id)
+    if practical is None:
+        raise HTTPException(status_code=404, detail="Practical not found")
+    path = NOTEBOOK_DIR / practical[1]
+    if not path.is_file():
+        raise HTTPException(status_code=500, detail="Notebook file is missing")
+    try:
+        notebook = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        raise HTTPException(status_code=500, detail="Notebook could not be read")
+    return practical, path, notebook
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -52,7 +66,8 @@ def health():
 @app.get("/practicals")
 def list_practicals():
     return [
-        {"id": pid, "title": title, "url": f"/{pid}", "download": f"/download/{pid}"}
+        {"id": pid, "title": title, "url": f"/{pid}", "jupyter_load": f"/c/{pid}",
+         "download": f"/download/{pid}"}
         for pid, (title, _) in PRACTICALS.items()
     ]
 
@@ -76,17 +91,7 @@ function copyCell(button){{const code=button.closest('.cell').querySelector('pre
 
 
 def render_notebook(practical_id: int) -> str:
-    practical = PRACTICALS.get(practical_id)
-    if practical is None:
-        raise HTTPException(status_code=404, detail="Practical not found")
-    path = NOTEBOOK_DIR / practical[1]
-    if not path.is_file():
-        raise HTTPException(status_code=500, detail="Notebook file is missing")
-    try:
-        notebook = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        raise HTTPException(status_code=500, detail="Notebook could not be read")
-
+    practical, _, notebook = load_notebook(practical_id)
     cells = []
     code_number = 0
     for cell in notebook.get("cells", []):
@@ -111,19 +116,30 @@ def render_notebook(practical_id: int) -> str:
         f'<div class="top">{nav}{download}</div><header><p class="eyebrow">PRACTICAL {practical_id:02d} / 14</p>'
         f'<h1>{escape(title)}</h1><p class="muted">Complete practical with explanations and copyable code cells.</p></header>'
         + "".join(cells)
-        + '<footer>Code runs in your local Python or Jupyter environment. Use the copy buttons to reuse individual cells.</footer>'
+        + '<footer>Use the /c/ URL with IPython %load to insert all code directly into a Jupyter cell.</footer>'
     )
     return page(title, body)
 
 
+@app.get("/c/{practical_id}", response_class=PlainTextResponse)
+def jupyter_code(practical_id: int):
+    practical, _, notebook = load_notebook(practical_id)
+    sections = [f"# {practical[0]} — complete practical", "# Loaded directly from ML Practical Cloud"]
+    code_number = 0
+    for cell in notebook.get("cells", []):
+        if cell.get("cell_type") != "code":
+            continue
+        source = cell.get("source", "")
+        if isinstance(source, list):
+            source = "".join(source)
+        code_number += 1
+        sections.append(f"# --- Code cell {code_number} ---\n{source.rstrip()}")
+    return PlainTextResponse("\n\n".join(sections) + "\n", media_type="text/x-python; charset=utf-8")
+
+
 @app.get("/download/{practical_id}")
 def download_practical(practical_id: int):
-    practical = PRACTICALS.get(practical_id)
-    if practical is None:
-        raise HTTPException(status_code=404, detail="Practical not found")
-    path = NOTEBOOK_DIR / practical[1]
-    if not path.is_file():
-        raise HTTPException(status_code=500, detail="Notebook file is missing")
+    practical, path, _ = load_notebook(practical_id)
     return FileResponse(path, media_type="application/x-ipynb+json", filename=path.name)
 
 
