@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 app = FastAPI(
     title="ML Practical Cloud",
     description="Browser-readable machine learning practicals",
-    version="2.1.0",
+    version="2.2.0",
 )
 NOTEBOOK_DIR = Path(__file__).resolve().parent.parent / "notebooks"
 
@@ -48,7 +48,7 @@ def load_notebook(practical_id: int):
 @app.get("/", response_class=HTMLResponse)
 def home():
     items = "".join(
-        f'<li><a href="/{pid}"><strong>{escape(title)}</strong><span>Open practical →</span></a></li>'
+        f'<li><a href="/t/{pid}"><strong>{escape(title)}</strong><span>Open practical →</span></a></li>'
         for pid, (title, _) in PRACTICALS.items()
     )
     return page("ML Practicals", f"""
@@ -66,7 +66,7 @@ def health():
 @app.get("/practicals")
 def list_practicals():
     return [
-        {"id": pid, "title": title, "url": f"/{pid}", "jupyter_load": f"/c/{pid}",
+        {"id": pid, "title": title, "url": f"/t/{pid}", "code": f"/{pid}",
          "download": f"/download/{pid}"}
         for pid, (title, _) in PRACTICALS.items()
     ]
@@ -116,13 +116,12 @@ def render_notebook(practical_id: int) -> str:
         f'<div class="top">{nav}{download}</div><header><p class="eyebrow">PRACTICAL {practical_id:02d} / 14</p>'
         f'<h1>{escape(title)}</h1><p class="muted">Complete practical with explanations and copyable code cells.</p></header>'
         + "".join(cells)
-        + '<footer>Use the /c/ URL with IPython %load to insert all code directly into a Jupyter cell.</footer>'
+        + f'<footer>Jupyter shortcut: !curl -L {"/"}{practical_id}</footer>'
     )
     return page(title, body)
 
 
-@app.get("/c/{practical_id}", response_class=PlainTextResponse)
-def jupyter_code(practical_id: int):
+def code_for_practical(practical_id: int) -> str:
     practical, _, notebook = load_notebook(practical_id)
     sections = [f"# {practical[0]} — complete practical", "# Loaded directly from ML Practical Cloud"]
     code_number = 0
@@ -134,7 +133,15 @@ def jupyter_code(practical_id: int):
             source = "".join(source)
         code_number += 1
         sections.append(f"# --- Code cell {code_number} ---\n{source.rstrip()}")
-    return PlainTextResponse("\n\n".join(sections) + "\n", media_type="text/x-python; charset=utf-8")
+    return "\n\n".join(sections) + "\n"
+
+
+@app.get("/c/{practical_id}", response_class=PlainTextResponse)
+def jupyter_code(practical_id: int):
+    return PlainTextResponse(
+        code_for_practical(practical_id),
+        media_type="text/x-python; charset=utf-8",
+    )
 
 
 @app.get("/download/{practical_id}")
@@ -148,6 +155,9 @@ def legacy_practical_url(practical_id: int):
     return HTMLResponse(render_notebook(practical_id))
 
 
-@app.get("/{practical_id}", response_class=HTMLResponse)
+@app.get("/{practical_id}", response_class=PlainTextResponse)
 def practical_url(practical_id: int):
-    return HTMLResponse(render_notebook(practical_id))
+    return PlainTextResponse(
+        code_for_practical(practical_id),
+        media_type="text/x-python; charset=utf-8",
+    )
