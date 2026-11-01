@@ -1,45 +1,46 @@
 # ML Practical Cloud
 
-A lightweight FastAPI service that serves all 14 Machine Learning practicals as readable browser pages with copyable code cells.
+Machine Learning practical notebooks using the exact syllabus IDs. Every notebook contains executable Python code cells only.
 
-## One short URL per practical
+## Practical URLs
 
-After deployment, open:
+- `/1` — Feature Engineering (Titanic)
+- `/2a` — PCA (Iris)
+- `/2b` — LDA (Iris)
+- `/3` — Multiple Linear Regression (California Housing)
+- `/4` — Polynomial Regression (California Housing)
+- `/5a` — Ridge Regression (California Housing)
+- `/5b` — Lasso Regression (California Housing)
+- `/6` — Logistic Regression (Social Network Ads)
+- `/7a` — SVM Linear Kernel (California Housing, linear SVR)
+- `/7b` — SVM Nonlinear Kernel (California Housing, RBF SVR)
+- `/8` — K-Means Clustering (Mall Customers)
+- `/9` — DBSCAN Clustering (Make Moons)
+- `/10` — Ensemble Learning / Random Forest (Wisconsin Breast Cancer)
+- `/11` — Q-Learning (simulated Grid World; no external dataset supplied)
 
-- `https://YOUR-APP.onrender.com/1` — Feature Engineering
-- `https://YOUR-APP.onrender.com/2` — PCA
-- `https://YOUR-APP.onrender.com/3` — LDA
-- `https://YOUR-APP.onrender.com/4` — Multiple Linear Regression
-- `https://YOUR-APP.onrender.com/5` — Polynomial Regression
-- `https://YOUR-APP.onrender.com/6` — Ridge Regression
-- `https://YOUR-APP.onrender.com/7` — Lasso Regression
-- `https://YOUR-APP.onrender.com/8` — Logistic Regression
-- `https://YOUR-APP.onrender.com/9` — SVM Linear Kernel
-- `https://YOUR-APP.onrender.com/10` — SVM Nonlinear Kernel
-- `https://YOUR-APP.onrender.com/11` — K-Means
-- `https://YOUR-APP.onrender.com/12` — DBSCAN
-- `https://YOUR-APP.onrender.com/13` — Ensemble Learning
-- `https://YOUR-APP.onrender.com/14` — Q-Learning
+Hosted service: https://ml-practical-cloud.onrender.com
 
-The practical page shows Markdown explanations and code cells directly in the browser. Use **Copy code** on any code cell. The optional **Download .ipynb** link preserves the original notebook.
+## Use in Jupyter
 
-## Deploy on Render
+1. Download and extract the supplied practical datasets ZIP.
+2. Keep the extracted dataset folders somewhere inside the directory from which Jupyter is running (or a subdirectory of it).
+3. In a notebook, run the matching command, for example:
 
-Render uses `render.yaml` in the repository root. Connect the GitHub repository as a Blueprint, or trigger a deploy for the existing service after pushing changes.
+```python
+!curl -L https://ml-practical-cloud.onrender.com/2a
+```
 
-## Other endpoints
+The code searches recursively for the supplied CSV filename, so the original folder structure and filenames can remain unchanged. Run the returned code in Jupyter. Required libraries include pandas, numpy, matplotlib and scikit-learn.
+
+## Browser and download endpoints
 
 - `/` — practical index
 - `/health` — health check
-- `/practicals` — JSON list of all practicals
-- `/download/{id}` — download the original notebook
-- `/t/{id}` — compatibility URL for the browser practical page
+- `/practicals` — JSON list
+- `/view/{id}` — browser viewer
+- `/download/{id}` — original Jupyter notebook
+- `/c/{id}` — raw Python code
+- `/{id}` — short raw Python code URL
 
-## Local development
-
-```bash
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-The hosted service displays and distributes notebooks; Python code executes in your local Jupyter/Python environment, not on Render.
+The notebooks execute in the user's Jupyter environment, not on Render.
