@@ -1,73 +1,45 @@
 # ML Practical Cloud
 
-Jupyter-native ML practical library built from the provided Machine Learning practical statement. Every endpoint serves a real `.ipynb` file with separate Markdown and code cells. The API distributes files; all experiment code executes locally in your Anaconda environment.
+A lightweight FastAPI service that serves all 14 Machine Learning practicals as readable browser pages with copyable code cells.
+
+## One short URL per practical
+
+After deployment, open:
+
+- `https://YOUR-APP.onrender.com/1` — Feature Engineering
+- `https://YOUR-APP.onrender.com/2` — PCA
+- `https://YOUR-APP.onrender.com/3` — LDA
+- `https://YOUR-APP.onrender.com/4` — Multiple Linear Regression
+- `https://YOUR-APP.onrender.com/5` — Polynomial Regression
+- `https://YOUR-APP.onrender.com/6` — Ridge Regression
+- `https://YOUR-APP.onrender.com/7` — Lasso Regression
+- `https://YOUR-APP.onrender.com/8` — Logistic Regression
+- `https://YOUR-APP.onrender.com/9` — SVM Linear Kernel
+- `https://YOUR-APP.onrender.com/10` — SVM Nonlinear Kernel
+- `https://YOUR-APP.onrender.com/11` — K-Means
+- `https://YOUR-APP.onrender.com/12` — DBSCAN
+- `https://YOUR-APP.onrender.com/13` — Ensemble Learning
+- `https://YOUR-APP.onrender.com/14` — Q-Learning
+
+The practical page shows Markdown explanations and code cells directly in the browser. Use **Copy code** on any code cell. The optional **Download .ipynb** link preserves the original notebook.
 
 ## Deploy on Render
 
-1. Push/confirm this repository on GitHub.
-2. In Render choose **New → Blueprint** and connect this repository.
-3. Render detects `render.yaml` and creates the web service.
-4. Test `/health`, `/practicals`, and `/docs`.
+Render uses `render.yaml` in the repository root. Connect the GitHub repository as a Blueprint, or trigger a deploy for the existing service after pushing changes.
 
-## Use in Anaconda Jupyter Notebook
+## Other endpoints
 
-In a notebook cell, replace the base URL with the Render URL assigned to your service:
+- `/` — practical index
+- `/health` — health check
+- `/practicals` — JSON list of all practicals
+- `/download/{id}` — download the original notebook
+- `/t/{id}` — compatibility URL for the browser practical page
 
-```python
-!curl -L https://YOUR-APP.onrender.com/t/4 -o 03_multiple_linear_regression.ipynb
-```
-
-Refresh the Jupyter file browser and open the downloaded notebook. Execute code cells individually using **Shift + Enter**. Editing and Ctrl+Z undo/redo remain native Jupyter behavior.
-
-## Endpoint map
-
-| ID | Experiment |
-|---:|---|
-| 1 | Feature Engineering |
-| 2 | PCA |
-| 3 | LDA |
-| 4 | Multiple Linear Regression |
-| 5 | Polynomial Regression |
-| 6 | Ridge Regression |
-| 7 | Lasso Regression |
-| 8 | Logistic Regression |
-| 9 | SVM — Linear Kernel |
-| 10 | SVM — Nonlinear Kernel |
-| 11 | K-Means Clustering |
-| 12 | DBSCAN Clustering |
-| 13 | Ensemble Learning |
-| 14 | Reinforcement Learning — Q-Learning |
-
-The supplied statement contains 11 numbered headings with PCA/LDA, Ridge/Lasso, and Linear/Nonlinear SVM as separate subparts. They are exposed as 14 distinct notebooks/endpoints.
-
-## API endpoints
-
-- `GET /` — simple practical index page
-- `GET /health` — health status
-- `GET /practicals` — JSON list of notebooks
-- `GET /t/{id}` — download notebook by ID
-
-## Local notebook dependencies
-
-The hosted API needs only FastAPI and Uvicorn. Your local Anaconda kernel needs the ML libraries used in the notebooks:
-
-```bash
-pip install numpy pandas matplotlib scikit-learn nbformat
-```
-
-Some examples fetch open datasets on first execution and require internet access.
-
-## Local API development
+## Local development
 
 ```bash
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Open `http://127.0.0.1:8000/docs`.
-
-## Notes
-
-- Render does not execute notebook code and does not need your ML libraries.
-- Notebook code runs on your laptop, preserving local files and Jupyter's native editor.
-- Notebooks are committed with empty outputs and unexecuted code cells.
+The hosted service displays and distributes notebooks; Python code executes in your local Jupyter/Python environment, not on Render.
