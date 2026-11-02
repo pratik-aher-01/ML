@@ -60,6 +60,15 @@ def home():
     """)
 
 
+@app.get("/0", response_class=PlainTextResponse)
+def practical_index():
+    lines = ["ML PRACTICAL INDEX", "==================", ""]
+    for code, (title, _) in PRACTICALS.items():
+        lines.append(f"Practical {code}: {title}")
+        lines.append(f"  !curl -L https://ml-practical-cloud.onrender.com/{code}")
+    return PlainTextResponse("\\n".join(lines) + "\\n")
+
+
 @app.get("/health")
 def health():
     return {"status": "healthy", "service": "ML Practical Cloud"}
